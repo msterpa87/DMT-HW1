@@ -56,3 +56,5 @@ if __name__ == "__main__":
     add_documents_from_dir(writer, TIME_DIR)
 
     writer.commit()
+
+    print("ok")
