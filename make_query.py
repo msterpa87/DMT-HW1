@@ -87,15 +87,33 @@ def queries_with_gt(queries, gt):
     return filtered
 
 
-def make_multiple_queries(ix, scoring_function, queries):
+def mean_reciprocal_rank(ix, scoring_function, queries, results_gt):
     """ Returns the results of each query
 
+    :param results_gt:
     :param ix: Whoosh index
     :param scoring_function: Whoosh scoring function
     :param queries: list of strings
     :return: dictionary {query_id: [results_ids]}
     """
-    pass
+    q_size = len(queries)
+    cumulative_rank = 0
+
+    with ix.searcher(weighting=scoring_function) as searcher:
+        qp = QueryParser("content", ix.schema)
+
+        for i, q in filtered_cranfield.items():
+            # parse query
+            parsed_query = qp.parse(q)
+
+            # get results ids
+            results = searcher.search(parsed_query)
+            results_ids = list(map(lambda x: int(x['id']), results))
+
+            # add reciprocal rank
+            cumulative_rank += reciprocal_rank(results_ids, results_gt[i])
+
+    return cumulative_rank / q_size
 
 
 if __name__ == "__main__":
@@ -109,31 +127,9 @@ if __name__ == "__main__":
 
     # test only on queries for which both str and gt are available
     filtered_cranfield = queries_with_gt(cranfield_queries, cranfield_gt)
-    q_size = len(filtered_cranfield)
 
-    cumulative_rank = 0
-
+    # open index
     ix = index.open_dir(INDEX_DIR)
 
-    with ix.searcher(weighting=scoring.Frequency()) as searcher:
-        qp = QueryParser("content", ix.schema)
-
-        for i, q in filtered_cranfield.items():
-            # results ids list
-            parsed_query = qp.parse(q)
-            results = searcher.search(parsed_query)
-            results_ids = list(map(lambda x: int(x['id']), results))
-
-            # ground truth ids
-            gt_ids = cranfield_gt[i]
-
-            #print(results_ids, gt_ids)
-            cumulative_rank += reciprocal_rank(results_ids, gt_ids)
-
-        searcher.close()
-
-        MRR = cumulative_rank / q_size
-        print(f"Parsed {q_size} queries\nMRR = {MRR}")
-
-
-# ADD SAME LOOP FOR TIME QUERIES AND THEN COMPUTE MRR
+    MRR = mean_reciprocal_rank(ix, scoring.Frequency(), filtered_cranfield, cranfield_gt)
+    print(f"MRR = {MRR}")
