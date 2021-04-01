@@ -1,12 +1,7 @@
 from whoosh import index
-from build_index import INDEX_DIR
 from os import listdir
 from bs4 import BeautifulSoup
-import re
-
-# fill index with documents
-CRANFIELD_DIR = "data/part_1/part_1_1/Cranfield_DATASET/DOCUMENTS/"
-TIME_DIR = "data/part_1/part_1_1/Time_DATASET/DOCUMENTS/"
+from config import *
 
 
 def id_from_filename(pathname):
@@ -19,14 +14,16 @@ def pathnames_from_dir(directory):
 
 
 if __name__ == "__main__":
+    # get index pathname from command line
+    index_dir = target_path()
+
     # open index
-    ix = index.open_dir(INDEX_DIR)
+    ix = index.open_dir(index_dir)
     writer = ix.writer()
 
     files = pathnames_from_dir(CRANFIELD_DIR) + pathnames_from_dir(TIME_DIR)
 
     for pathname in files:
-        #print(f"[{pathname}]")
         # read html content
         with open(pathname, "r") as file:
             html = file.read()
@@ -35,7 +32,6 @@ if __name__ == "__main__":
 
         # add document to index
         doc_id = id_from_filename(pathname)
-        # title = soup.title.string.strip()
         content = soup.body.string.strip()
         writer.add_document(id=doc_id, content=content)
 
