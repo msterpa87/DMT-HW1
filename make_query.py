@@ -13,8 +13,7 @@ TIME_GT = "data/part_1/part_1_1/Time_DATASET/time_Ground_Truth.tsv"
 
 
 def load_queries(pathname):
-    """
-        Returns the list of queries contained in the target pathname tsv file
+    """ Returns the list of queries contained in the target pathname tsv file
 
     :param pathname: string
     :return: dictionary {query_id: string}
@@ -34,8 +33,7 @@ def load_queries(pathname):
 
 
 def load_ground_truth(pathname):
-    """
-        Returns a dictionary of query_id: [results_ids]
+    """ Returns a dictionary of query_id: [results_ids]
 
     :param pathname: string
     :return: dictionary {query_id: list of ids}, ids as int
@@ -55,7 +53,7 @@ def load_ground_truth(pathname):
 
 
 def reciprocal_rank(result, gt):
-    """
+    """ Computes the reciprocal rank of the two lists
 
     :param result: set of ints
     :param gt: set of ints
@@ -74,8 +72,7 @@ def reciprocal_rank(result, gt):
 
 
 def queries_with_gt(queries, gt):
-    """
-        Filters the query for which there is a ground truth
+    """ Filters the query for which there is a ground truth
 
     :param queries: dictionary of queries {query_id: string}
     :param gt: dictionary of ground truth results {query_id: list of ints}
@@ -83,7 +80,7 @@ def queries_with_gt(queries, gt):
     """
     filtered = {}
 
-    for k,v in enumerate(gt):
+    for k,v in gt.items():
         with suppress(KeyError):
             filtered[k] = queries[k]
 
@@ -91,20 +88,17 @@ def queries_with_gt(queries, gt):
 
 
 def make_multiple_queries(ix, scoring_function, queries):
-    """
-        Returns the results of each query
+    """ Returns the results of each query
 
     :param ix: Whoosh index
     :param scoring_function: Whoosh scoring function
     :param queries: list of strings
     :return: dictionary {query_id: [results_ids]}
     """
-
+    pass
 
 
 if __name__ == "__main__":
-    ix = index.open_dir(INDEX_DIR)
-
     # loading queries
     cranfield_queries = load_queries(CRANFIELD_QUERY)
     time_queries = load_queries(TIME_QUERY)
@@ -113,23 +107,33 @@ if __name__ == "__main__":
     cranfield_gt = load_ground_truth(CRANFIELD_GT)
     time_gt = load_ground_truth(TIME_GT)
 
-    qp = QueryParser("content", ix.schema)
-
-    # (!) we should implement up to 12 different configurations here
-    scoring_function = scoring.Frequency()
+    # test only on queries for which both str and gt are available
+    filtered_cranfield = queries_with_gt(cranfield_queries, cranfield_gt)
+    q_size = len(filtered_cranfield)
 
     cumulative_rank = 0
 
-    #filtered_cranfield = list(map(lambda))
+    ix = index.open_dir(INDEX_DIR)
 
-    for query_id, gt_ids in cranfield_gt:
-        parsed_query = qp.parse(q)
-        searcher = ix.searcher(weighting=scoring_function)
-        results = searcher.search(parsed_query)
+    with ix.searcher(weighting=scoring.Frequency()) as searcher:
+        qp = QueryParser("content", ix.schema)
 
-        # compare query results with ground truth and compute rank
-        results_ids = list(map(lambda x: int(x['id']), results))
-        gt_ids = cranfield_gt[i]
-        cumulative_rank += reciprocal_rank(results_ids, gt_ids)
+        for i, q in filtered_cranfield.items():
+            # results ids list
+            parsed_query = qp.parse(q)
+            results = searcher.search(parsed_query)
+            results_ids = list(map(lambda x: int(x['id']), results))
 
-    # ADD SAME LOOP FOR TIME QUERIES AND THEN COMPUTE MRR
+            # ground truth ids
+            gt_ids = cranfield_gt[i]
+
+            #print(results_ids, gt_ids)
+            cumulative_rank += reciprocal_rank(results_ids, gt_ids)
+
+        searcher.close()
+
+        MRR = cumulative_rank / q_size
+        print(f"Parsed {q_size} queries\nMRR = {MRR}")
+
+
+# ADD SAME LOOP FOR TIME QUERIES AND THEN COMPUTE MRR
