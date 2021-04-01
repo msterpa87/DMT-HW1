@@ -3,6 +3,7 @@ from whoosh.qparser import *
 from whoosh import scoring
 from build_index import INDEX_DIR
 from collections import defaultdict
+from contextlib import suppress
 import csv
 
 CRANFIELD_QUERY = "data/part_1/part_1_1/Cranfield_DATASET/cran_Queries.tsv"
@@ -16,15 +17,20 @@ def load_queries(pathname):
         Returns the list of queries contained in the target pathname tsv file
 
     :param pathname: string
-    :return: list of strings
+    :return: dictionary {query_id: string}
     """
+    queries = {}
+
     with open(pathname) as csvfile:
         reader = csv.reader(csvfile, delimiter='\t')
 
         # skip header
         next(reader, None)
 
-        return list(map(lambda x: x[1], reader))
+        for k,v in reader:
+            queries[int(k)-1] = v
+
+    return queries
 
 
 def load_ground_truth(pathname):
@@ -67,6 +73,35 @@ def reciprocal_rank(result, gt):
     return 1 / rank
 
 
+def queries_with_gt(queries, gt):
+    """
+        Filters the query for which there is a ground truth
+
+    :param queries: dictionary of queries {query_id: string}
+    :param gt: dictionary of ground truth results {query_id: list of ints}
+    :return: dictionary of queries with a ground truth
+    """
+    filtered = {}
+
+    for k,v in enumerate(gt):
+        with suppress(KeyError):
+            filtered[k] = queries[k]
+
+    return filtered
+
+
+def make_multiple_queries(ix, scoring_function, queries):
+    """
+        Returns the results of each query
+
+    :param ix: Whoosh index
+    :param scoring_function: Whoosh scoring function
+    :param queries: list of strings
+    :return: dictionary {query_id: [results_ids]}
+    """
+
+
+
 if __name__ == "__main__":
     ix = index.open_dir(INDEX_DIR)
 
@@ -85,7 +120,9 @@ if __name__ == "__main__":
 
     cumulative_rank = 0
 
-    for i,q in enumerate(cranfield_queries):
+    #filtered_cranfield = list(map(lambda))
+
+    for query_id, gt_ids in cranfield_gt:
         parsed_query = qp.parse(q)
         searcher = ix.searcher(weighting=scoring_function)
         results = searcher.search(parsed_query)
