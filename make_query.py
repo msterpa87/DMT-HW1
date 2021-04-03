@@ -46,3 +46,12 @@ if __name__ == "__main__":
     print(f"Median: \t {rps['median']}")
     print(f"3rd quartile:\t {rps['third_quartile']}")
     print(f"Max:\t\t {rps['max']}")
+
+    # Precision at k plot
+    ks = [1, 3, 5, 10]
+    rp_at_k = [r_precision_stats(r_precision(results_ids, cranfield_gt, k))['mean'] for k in ks]
+    print(f"P@k {rp_at_k}")
+
+    # Normalized Discounted Cumulative Gain at k plot
+    ndcg_at_k = [mean_ndcg(results_ids, cranfield_gt, k) for k in ks]
+    print(f"NDCG@k {ndcg_at_k}")

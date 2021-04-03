@@ -104,20 +104,29 @@ def get_results_ids(ix, scoring_function, queries):
     return results_ids
 
 
-def r_precision(results_ids, results_gt):
+def r_precision(results_ids, results_gt, k=None):
     """ Returns the dictionary of R-precision for each query
 
     :param results_ids: dictionary {query_id: [list of ids]}
     :param results_gt: dictionary {query_id: [list of ids]}
+    :param k:
     :return: dictionary {query_id: r-precision}
     """
     rp = {}
 
     for i, ids in results_ids.items():
+        # current ground truth
         gt = results_gt[i]
-        R = len(gt)
+        size = len(gt)
+
+        # consider the first len(gt) documents
+        if k is None:
+            k = size
+
+        ids = ids[:k]
+
         r = len(list(set(gt).intersection(set(ids))))
-        rp[i] = r / R
+        rp[i] = r / size
 
     return rp
 
@@ -140,7 +149,7 @@ def r_precision_stats(rp):
 
 
 def mean_reciprocal_rank(results_ids, results_gt):
-    """ Computes the mean reciprocal rank
+    """ Compute the mean reciprocal rank
 
     :param results_ids: dictionary {query_id: [list of ids]}
     :param results_gt: dictionary {query_id: [list of ids]}
@@ -155,3 +164,40 @@ def mean_reciprocal_rank(results_ids, results_gt):
         cumulative_rank += reciprocal_rank(ids, results_gt[i])
 
     return cumulative_rank / q_size
+
+
+def ndcg(results_ids, results_gt, k=None):
+    """ Return the discounted cumulative gain
+
+    :param results_ids: list of ints
+    :param results_gt: list of ints
+    :param k: int
+    :return: float
+    """
+    total = 0.0
+
+    # normalization factor wrt gt
+    norm = 1 + sum(map(lambda x: 1 / np.log2(x + 1), range(1, len(results_gt))))
+
+    if k is None:
+        k = min(len(results_ids), k)
+
+    for i in range(k):
+        # binary relevance (1 if in gt, 0 otherwise)
+        rel = int(results_ids[i] in results_gt)
+        den = 1 if i == 0 else np.log2(i+1)
+        total = total + (rel / den)
+
+    return total / norm
+
+
+def mean_ndcg(results_ids, results_gt, k):
+    """
+
+    :param results_ids:
+    :param results_gt:
+    :param k:
+    :return:
+    """
+    totals = [ndcg(results_ids[i], results_gt[i], k) for i in results_ids.keys()]
+    return sum(totals) / len(totals)
