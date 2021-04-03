@@ -2,6 +2,7 @@ from whoosh.qparser import *
 from collections import defaultdict
 from contextlib import suppress
 import csv
+import numpy as np
 
 
 def load_queries(pathname):
@@ -79,17 +80,15 @@ def queries_with_gt(queries, gt):
     return filtered
 
 
-def mean_reciprocal_rank(ix, scoring_function, queries, results_gt):
-    """ Returns the results of each query
+def get_results_ids(ix, scoring_function, queries):
+    """ Returns a dictionary containing a list of documents ids for each query
 
-    :param results_gt:
     :param ix: Whoosh index
     :param scoring_function: Whoosh scoring function
-    :param queries: list of strings
-    :return: dictionary {query_id: [results_ids]}
+    :param queries:
+    :return:
     """
-    q_size = len(queries)
-    cumulative_rank = 0
+    results_ids = {}
 
     with ix.searcher(weighting=scoring_function) as searcher:
         qp = QueryParser("content", ix.schema)
@@ -100,9 +99,59 @@ def mean_reciprocal_rank(ix, scoring_function, queries, results_gt):
 
             # get results ids
             results = searcher.search(parsed_query)
-            results_ids = list(map(lambda x: int(x['id']), results))
+            results_ids[i] = list(map(lambda x: int(x['id']), results))
 
-            # add reciprocal rank
-            cumulative_rank += reciprocal_rank(results_ids, results_gt[i])
+    return results_ids
+
+
+def r_precision(results_ids, results_gt):
+    """ Returns the dictionary of R-precision for each query
+
+    :param results_ids: dictionary {query_id: [list of ids]}
+    :param results_gt: dictionary {query_id: [list of ids]}
+    :return: dictionary {query_id: r-precision}
+    """
+    rp = {}
+
+    for i, ids in results_ids.items():
+        gt = results_gt[i]
+        R = len(gt)
+        r = len(list(set(gt).intersection(set(ids))))
+        rp[i] = r / R
+
+    return rp
+
+
+def r_precision_stats(rp):
+    """ Return a dictionary of stats on R-Precision
+
+    :param rp: dictionary {query_id: float}
+    :return: dictionary {string: float}
+    """
+    vals = list(rp.values())
+    stats = {'min': np.min(vals),
+             'max': np.max(vals),
+             'mean': np.mean(vals),
+             'median': np.median(vals),
+             'first_quartile': np.quantile(vals, 0.25),
+             'third_quartile': np.quantile(vals, 0.75)}
+
+    return stats
+
+
+def mean_reciprocal_rank(results_ids, results_gt):
+    """ Computes the mean reciprocal rank
+
+    :param results_ids: dictionary {query_id: [list of ids]}
+    :param results_gt: dictionary {query_id: [list of ids]}
+    :return: dictionary {query_id: [results_ids]}
+    """
+    q_size = len(results_ids)
+    cumulative_rank = 0
+
+    for i, ids in results_ids.items():
+
+        # add reciprocal rank
+        cumulative_rank += reciprocal_rank(ids, results_gt[i])
 
     return cumulative_rank / q_size
