@@ -1,4 +1,4 @@
-from whoosh import index, scoring
+from whoosh import index
 from config import *
 from utils import *
 
@@ -12,29 +12,20 @@ if __name__ == "__main__":
     print(f"Target directory: {index_dir}")
     print(f"Scoring function: {scoring_function.__class__.__name__}")
 
-    # loading queries
-    cranfield_queries = load_queries(CRANFIELD_QUERY)
-    time_queries = load_queries(TIME_QUERY)
-
-    # loading ground truth
-    cranfield_gt = load_ground_truth(CRANFIELD_GT)
-    time_gt = load_ground_truth(TIME_GT)
-
-    # test only on queries for which both str and gt are available
-    filtered_cranfield = queries_with_gt(cranfield_queries, cranfield_gt)
-    filtered_time = queries_with_gt(time_queries, time_gt)
+    # load selected dataset
+    filtered_queries, queries_gt = load_dataset(config['dataset'])
 
     # open index
     ix = index.open_dir(index_dir)
 
-    # get doc ids for each query
-    results_ids = get_results_ids(ix, scoring_function, filtered_cranfield)
+    # results for both sets of queries
+    results_ids = get_results_ids(ix, scoring_function, filtered_queries)
 
     # compute metrics
-    MRR = mean_reciprocal_rank(results_ids, cranfield_gt)
+    MRR = mean_reciprocal_rank(results_ids, queries_gt)
 
     # compute R-precision
-    rp = r_precision(results_ids, cranfield_gt)
+    rp = r_precision(results_ids, queries_gt)
     rps = r_precision_stats(rp)
 
     print()
@@ -49,9 +40,9 @@ if __name__ == "__main__":
 
     # Precision at k plot
     ks = [1, 3, 5, 10]
-    rp_at_k = [r_precision_stats(r_precision(results_ids, cranfield_gt, k))['mean'] for k in ks]
+    rp_at_k = [r_precision_stats(r_precision(results_ids, queries_gt, k))['mean'] for k in ks]
     print(f"P@k {rp_at_k}")
 
     # Normalized Discounted Cumulative Gain at k plot
-    ndcg_at_k = [mean_ndcg(results_ids, cranfield_gt, k) for k in ks]
+    ndcg_at_k = [mean_ndcg(results_ids, queries_gt, k) for k in ks]
     print(f"NDCG@k {ndcg_at_k}")
