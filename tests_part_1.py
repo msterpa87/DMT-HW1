@@ -1,12 +1,14 @@
 from config import *
 from utils import *
 from whoosh import index
+import matplotlib.pyplot as plt
 
 # Max 12 different configuartions of Analyzer and Scoring
 # Frequency must appear in at most 1 config
 CONFIG = [['simple', 'frequency'],
           ['simple', 'tfidf'],
           ['standard', 'tfidf'],
+          ['simple', 'bm25f', 0.5, 1.5]
           # fill this with the remaining pairings according to google sheet table
           # https://docs.google.com/spreadsheets/d/1xLCRqrfUH_aQZ9TyC4OL0s76VScsLx8rCiSLes9-hyM/edit#gid=0
           ]
@@ -41,6 +43,14 @@ def run_config(index_dir, dataset, scoring_function):
     rp = r_precision(results_ids, queries_gt)
     rps = r_precision_stats(rp)
 
+    # Precision at k plot
+    rp_at_k = [r_precision_stats(r_precision(results_ids, queries_gt, k))['mean'] for k in K_VAL]
+    print(f"P@k {rp_at_k}")
+
+    # Normalized Discounted Cumulative Gain at k plot
+    ndcg_at_k = [mean_ndcg(results_ids, queries_gt, k) for k in K_VAL]
+    print(f"NDCG@k {ndcg_at_k}")
+
     print()
     print(f"MRR: {MRR}\n")
     print("[R-Precision]")
@@ -54,11 +64,30 @@ def run_config(index_dir, dataset, scoring_function):
 
 
 if __name__ == "__main__":
+    performance_stats = {}
+
+    # iterate over both datasets and all available configurations
     for dataset in DATASET:
-        for index_dir, scoring in CONFIG:
+        for item in CONFIG:
+            try:
+                index_dir, scoring, B, k1 = item
+            except ValueError:
+                index_dir, scoring = item
+
             # index pathname
             index_dir = INDEX_PATH + index_dir
 
+            # selected scoring function
+            scoring_function = SCORINGS[scoring]
+
+            # scoring_function here is a Class name not an actual object
+            if scoring == 'bm25f':
+                scoring_function = scoring_function(B, k1)
+
             # run a single configuration test
-            run_config(index_dir, dataset, SCORINGS[scoring])
-            break
+            run_config(index_dir, dataset, scoring_function)
+
+            # get dictionary and save it to file (maybe?)
+
+
+    # make plots of NCDG@k and P@k
