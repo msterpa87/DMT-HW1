@@ -30,7 +30,7 @@ def shingles(s, length=3):
     if len(tokens) < 3:
         return []
 
-    return [tokens[i:i + length] for i in range(len(tokens) - (length-1))]
+    return [tuple(tokens[i:i + length]) for i in range(len(tokens) - (length-1))]
 
 
 def shingles_from_lyrics():
@@ -64,3 +64,30 @@ def shingles_id_from_list(lyrics_shingles):
     """
     unique_shingles = list(set(chain(*lyrics_shingles)))
     return dict(zip(unique_shingles, range(len(unique_shingles))))
+
+
+def shingles_as_vector(id_dict, shingles_list):
+    """ Computes the indicator vector of shingle_list according to the identifier in id_dict
+
+    :param id_dict: dictionary {tuple of 3 strings: int}
+    :param shingles_list: list of tuple of 3 strings
+    :return: list of ints
+        v[i] = 1 iff shingle_i is in shingles_list
+    """
+    n_id = len(id_dict)
+    vector = [0] * n_id
+
+    for shingle in shingles_list:
+        vector[id_dict[shingle]] = 1
+
+    return vector
+
+
+def shingles_as_list(id_dict, shingle_list):
+    """ Returns a list the (unique) identifiers contained in shingle_list
+
+    :param id_dict: dictionary {tuple of 3 strings: int}
+    :param shingle_list: list of tuple of 3 strings
+    :return: list of ints
+    """
+    return sorted(list(set([id_dict[s] for s in shingle_list])))
