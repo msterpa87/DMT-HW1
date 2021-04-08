@@ -1,0 +1,4 @@
+
+BRUTE FORCE DETECTION TO PRODUCE GROUND TRUTH
+
+java tools.NearDuplicatesDetector brute_force 0.95 ./sw/shingles.tsv ./output_data/BRUTE_FORCE_near_duplicates.tsv

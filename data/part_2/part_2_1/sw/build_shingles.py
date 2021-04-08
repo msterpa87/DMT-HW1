@@ -21,4 +21,6 @@ if __name__ == "__main__":
         writer.writerow(["ID", "ELEMENTS_IDS"])
 
         for i, id_list in enumerate(lyrics_id_lists):
-            writer.writerow([f"id_{i}", id_list])
+            # save to file non empty lists
+            if len(id_list) > 0:
+                writer.writerow([f"id_{i}", id_list])
