@@ -3,48 +3,65 @@ import string
 from tqdm import tqdm
 from itertools import chain
 from collections import defaultdict
+from config import *
 
-translate_table = dict((ord(char), None) for char in string.punctuation)
-LYRICS_COL = 5
-SONGS_PATH = "../../dataset/250K_lyrics_from_MetroLyrics.csv"
+translate_table = dict((ord(char), None) for char in string.punctuation.replace("'", ""))
 
 
 ##########################################
 # FUNCTIONS TO CREATE SHINGLES TSV FILES #
 ##########################################
 
-def preprocess(s):
+def preprocess(s, remove_dash=False):
     """ Remove punctuation and lower case the string
 
     :param s: string
+    :param remove_dash: bool
     :return: string
     """
+    if remove_dash:
+        s = s.replace("-", " ")
+
     s = s.translate(translate_table)
     return s.lower()
 
 
-def shingles(s, length=3):
+def get_shingles(s, length=3, keep_short=False):
     """ Computes the length-shingles of the string s
 
     :param s: string
+        input string from which to build the shingles
     :param length: int
         size of a shingle (number of tokens from the string)
+    :param keep_short: bool
+        return a whole shingle even if there are less than length words
     :return: list of lists of strings
+        list of all shingles generated
     """
     tokens = s.split()
     if len(tokens) < 3:
-        return []
+        if keep_short:
+            return [tuple(tokens)]
+        else:
+            return []
 
     return [tuple(tokens[i:i + length]) for i in range(len(tokens) - (length-1))]
 
 
-def shingles_from_lyrics():
+def shingles_from_tsv(col=LYRICS_COL):
     """ Returns a list where each element is a list of shingles of one of the lyrics
 
     :return: nested list of strings
         [[[s1,s2,s3], ...], ...]
     """
-    lyrics_shingles = []
+    shingles_list = []
+
+    remove_dash = False
+    keep_short = False
+
+    if col != LYRICS_COL:
+        remove_dash = True
+        keep_short = True
 
     with open(SONGS_PATH) as f:
         # open csv file and skip header
@@ -53,10 +70,10 @@ def shingles_from_lyrics():
 
         # iterate over rows
         for row in tqdm(reader):
-            lyrics = preprocess(row[LYRICS_COL])
-            lyrics_shingles.append(shingles(lyrics))
+            shingles = preprocess(row[col], remove_dash=remove_dash)
+            shingles_list.append(get_shingles(shingles, keep_short=keep_short))
 
-    return lyrics_shingles
+    return shingles_list
 
 
 def shingles_id_from_list(lyrics_shingles):
@@ -133,7 +150,7 @@ def near_duplicates_stats(gt, pred):
     :param pred: dictionary
         output of load_near_duplicates_tsv()
     :return: float, int, int
-        1. detection probability = ground_truth_pairs / detected_pairs
+        1. detection probability = detected_pairs / ground_truth_pairs
         2. false positives
         3. false negatives
     """
