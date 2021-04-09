@@ -2,11 +2,16 @@ import csv
 import string
 from tqdm import tqdm
 from itertools import chain
+from collections import defaultdict
 
 translate_table = dict((ord(char), None) for char in string.punctuation)
 LYRICS_COL = 5
 SONGS_PATH = "../../dataset/250K_lyrics_from_MetroLyrics.csv"
 
+
+##########################################
+# FUNCTIONS TO CREATE SHINGLES TSV FILES #
+##########################################
 
 def preprocess(s):
     """ Remove punctuation and lower case the string
@@ -91,3 +96,67 @@ def shingles_as_list(id_dict, shingle_list):
     :return: list of ints
     """
     return sorted(list(set([id_dict[s] for s in shingle_list])))
+
+
+#########################################################
+# FUNCTIONS TO LOAD OUTPUT OF NEAR DUPLICATES DETECTION #
+#########################################################
+
+def load_near_duplicates_tsv(pathname):
+    """ Loads the output of the near duplicate detection algorithm
+        in a dictionary that contains the jaccard similarities of
+        all the sets ordered by id
+
+    :param pathname: string
+        full pathname of tsv file output by near duplicate detection class
+    :return: nested dictionary
+        return a dictionary where dict[id_1][id_2] = jaccard_similarity(id_1, id_2)
+    """
+    near_duplicates = defaultdict(dict)
+
+    with open(pathname, "r") as f:
+        reader = csv.reader(f, delimiter='\t')
+        next(reader)
+
+        for line in reader:
+            jaccard, id_1, _, id_2, _ = line
+            near_duplicates[int(id_1)][int(id_2)] = float(jaccard)
+
+    return near_duplicates
+
+
+def near_duplicates_stats(gt, pred):
+    """ Returns detection probability, number of false positives and negatives
+
+    :param gt: dictionary
+        output of load_near_duplicates_tsv()
+    :param pred: dictionary
+        output of load_near_duplicates_tsv()
+    :return: float, int, int
+        1. detection probability = ground_truth_pairs / detected_pairs
+        2. false positives
+        3. false negatives
+    """
+    total_near_duplicates = 0
+    total_detected = 0
+    false_negatives = 0
+    false_positives = 0
+
+    for id_1, nd_dict in gt.items():
+        # sum ground truth near duplicates of id_1
+        total_near_duplicates += len(nd_dict)
+
+        # sum detected and false positives near duplicates
+        for id_2 in nd_dict.keys():
+            if int(id_2 in pred[id_1] or id_1 in pred[id_2]):
+                total_detected += 1
+            else:
+                false_negatives += 1
+
+    for id_1, nd_dict in pred.items():
+        for id_2 in nd_dict.keys():
+            false_positives += int(id_1 not in gt[id_2] and id_2 not in gt[id_1])
+
+    detection_prob = total_detected / total_near_duplicates
+
+    return detection_prob, false_positives, false_negatives
