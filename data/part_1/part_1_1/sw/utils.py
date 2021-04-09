@@ -176,17 +176,17 @@ def ndcg(results_ids, results_gt, k=None):
     """
     total = 0.0
 
-    # normalization factor wrt gt
-    norm = 1 + sum(map(lambda x: 1 / np.log2(x + 1), range(1, len(results_gt))))
-
     if k is None:
         k = min(len(results_ids), k)
+
+    # normalization factor wrt gt
+    norm = 1 + sum(map(lambda x: 1 / np.log2(x + 1), range(1, k)))
 
     for i in range(k):
         # binary relevance (1 if in gt, 0 otherwise)
         rel = int(results_ids[i] in results_gt)
         den = 1 if i == 0 else np.log2(i+1)
-        total = total + (rel / den)
+        total += (rel / den)
 
     return total / norm
 
