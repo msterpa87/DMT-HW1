@@ -8,6 +8,38 @@ from config import *
 translate_table = dict((ord(char), None) for char in string.punctuation.replace("'", ""))
 
 
+##################################################
+# CLASS REPRESENTING A SONG ENTRY IN THE DATASET #
+##################################################
+
+class Song(object):
+    def __init__(self, row, field):
+        """ Initialize a Song object containing the song id and the computed shingle
+            according to the field value
+
+        :param row: row of tsv with 6 columns "ID","song","year","artist","genre","lyrics"
+        :param field: string
+            can be either "title" or "lyrics", is the field used to create the shingle
+        """
+        assert(field in ["title", "lyrics"])
+
+        # save song identifier
+        self.id = int(row[0])
+
+        if field == "title":
+            self.title = preprocess(row[1], remove_dash=True)
+            self.shingles = create_shingles(self.title, keep_short=True)
+        else:
+            self.lyrics = preprocess(row[5])
+            self.shingles = create_shingles(self.lyrics)
+
+    def get_shingles(self):
+        return self.shingles
+
+    def get_id(self):
+        return self.id
+
+
 ##########################################
 # FUNCTIONS TO CREATE SHINGLES TSV FILES #
 ##########################################
@@ -26,7 +58,7 @@ def preprocess(s, remove_dash=False):
     return s.lower()
 
 
-def get_shingles(s, length=3, keep_short=False):
+def create_shingles(s, length=3, keep_short=False):
     """ Computes the length-shingles of the string s
 
     :param s: string
@@ -48,20 +80,16 @@ def get_shingles(s, length=3, keep_short=False):
     return [tuple(tokens[i:i + length]) for i in range(len(tokens) - (length-1))]
 
 
-def shingles_from_tsv(col=LYRICS_COL):
-    """ Returns a list where each element is a list of shingles of one of the lyrics
+def shingles_from_tsv(field):
+    """ Returns a list of shingles generated from songs dataset
 
-    :return: nested list of strings
-        [[[s1,s2,s3], ...], ...]
+    :param field: string
+        the tsv field from which shingles should be generated
+    :return: list of Song objects
     """
-    shingles_list = []
+    assert(field in ["title", "lyrics"])
 
-    remove_dash = False
-    keep_short = False
-
-    if col != LYRICS_COL:
-        remove_dash = True
-        keep_short = True
+    songs_list = []
 
     with open(SONGS_PATH) as f:
         # open csv file and skip header
@@ -70,39 +98,22 @@ def shingles_from_tsv(col=LYRICS_COL):
 
         # iterate over rows
         for row in tqdm(reader):
-            shingles = preprocess(row[col], remove_dash=remove_dash)
-            shingles_list.append(get_shingles(shingles, keep_short=keep_short))
+            songs_list.append(Song(row, field))
 
-    return shingles_list
+    return songs_list
 
 
-def shingles_id_from_list(lyrics_shingles):
+def shingles_id_from_list(songs_list):
     """ Assigns a unique identifier to each shingle
 
-    :param lyrics_shingles: nested list of shingles
+    :param songs_list: nested list of shingles
         a list of list of lists of 3 strings, the direct output of shingles_from_lyrics()
     :return: dictionary {tuple: int}
         a dictionary {shingle: id}
     """
-    unique_shingles = list(set(chain(*lyrics_shingles)))
+    shingles_list = list(map(lambda x: x.get_shingles(), songs_list))
+    unique_shingles = list(set(chain(*shingles_list)))
     return dict(zip(unique_shingles, range(len(unique_shingles))))
-
-
-def shingles_as_vector(id_dict, shingles_list):
-    """ Computes the indicator vector of shingle_list according to the identifier in id_dict
-
-    :param id_dict: dictionary {tuple of 3 strings: int}
-    :param shingles_list: list of tuple of 3 strings
-    :return: list of ints
-        v[i] = 1 iff shingle_i is in shingles_list
-    """
-    n_id = len(id_dict)
-    vector = [0] * n_id
-
-    for shingle in shingles_list:
-        vector[id_dict[shingle]] = 1
-
-    return vector
 
 
 def shingles_as_list(id_dict, shingle_list):
