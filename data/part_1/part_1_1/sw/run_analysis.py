@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 CONFIG = [['simple', 'frequency'],
           ['simple', 'tfidf'],
           ['standard', 'tfidf'],
-          ['simple', 'bm25f', 0.5, 1.5]
+          ['simple', 'bm25f', 0.5, 1.5],
+          ['stemming', 'bm25f', 0.3, 2]
           # fill this with the remaining pairings according to google sheet table
           # https://docs.google.com/spreadsheets/d/1xLCRqrfUH_aQZ9TyC4OL0s76VScsLx8rCiSLes9-hyM/edit#gid=0
           ]

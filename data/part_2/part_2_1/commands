@@ -1,0 +1,13 @@
+All commands must be executed from part_2_1 directory
+
+BRUTE FORCE DETECTION TO PRODUCE GROUND TRUTH FOR LYRICS
+java tools.NearDuplicatesDetector brute_force 0.95 ./data/lyrics_shingles.tsv ./sw/BRUTE_FORCE_lyrics.tsv
+
+LSH DETECTION TO PRODUCE PREDICTION FOR LYRICS
+java -Xmx1G tools.NearDuplicatesDetector lsh_plus_min_hashing 0.95 5 10 hash_functions/300.tsv data/lyrics_shingles.tsv data/PRED_lyrics.tsv
+
+PERFORMANCE ANALYSIS FOR LYRICS
+
+
+BRUTE FORCE DETECTION TO PRODUCE GROUND TRUTH FOR LYRICS
+java -Xmx1G tools.NearDuplicatesDetector lsh_plus_min_hashing 0.95 5 10 hash_functions/300.tsv shingles.tsv PRED_near_duplicates.tsv
