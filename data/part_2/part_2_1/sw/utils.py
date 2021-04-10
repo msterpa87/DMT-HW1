@@ -117,7 +117,7 @@ def shingles_id_from_list(songs_list):
 
 
 def shingles_as_list(id_dict, shingle_list):
-    """ Returns a list the (unique) identifiers contained in shingle_list
+    """ Returns a list of the sorted identifiers of shingles in shingle_list
 
     :param id_dict: dictionary {tuple of 3 strings: int}
     :param shingle_list: list of tuple of 3 strings

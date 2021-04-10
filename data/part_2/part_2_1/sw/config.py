@@ -5,13 +5,6 @@ TITLE_COL = 1
 SONGS_PATH = "../../dataset/250K_lyrics_from_MetroLyrics.csv"
 
 
-def analysis_config():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--field", type=str, default="lyrics", choices=["lyrics", "title"],
-                        help="Field to use to build shingles from songs tsv file")
-    return parser.parse_args()
-
-
 def build_shingles_config():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", type=str, default=SONGS_PATH,
