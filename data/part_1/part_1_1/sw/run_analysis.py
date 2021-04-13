@@ -2,31 +2,73 @@ from config import *
 from utils import *
 from whoosh import index
 import matplotlib.pyplot as plt
+import pickle
+import os
 
 # Max 12 different configuartions of Analyzer and Scoring
 # Frequency must appear in at most 1 config
-CONFIG = [['simple', 'frequency'],
-          ['simple', 'tfidf'],
-          ['standard', 'tfidf'],
-          ['simple', 'bm25f', 0.5, 1.5],
-          ['stemming', 'bm25f', 0.3, 2]
-          # fill this with the remaining pairings according to google sheet table
-          # https://docs.google.com/spreadsheets/d/1xLCRqrfUH_aQZ9TyC4OL0s76VScsLx8rCiSLes9-hyM/edit#gid=0
+CONFIG = [['stemming', 'bm25f', 0.8, 1.9],
+          ['stemming', 'bm25f', 0.8, 1.5],
+          ['stemming', 'bm25f', 0.7, 1.7],
+          ['stemming', 'bm25f', 0.9, 1.5],
+          ['stemming', 'bm25f', 0.8, 1.2],
+          ['stemming', 'bm25f', 0.9],
+          ['stemming', 'bm25f', 0.3, 1.2],
+          ['stemming', 'bm25f', 0.4, 1.7],
+          ['stemming', 'bm25f'],
+          ['stemming', 'bm25f', 0.5, 1.5],
+          ['stemming', 'bm25f', 0.2, 1.9],
           ]
 
 DATASET = ['cranfield', 'time']
 
 
-def run_config(index_dir, dataset, scoring_function):
+def parse_config(config_list):
+    """
+
+    :param config_list:
+    :return:
+    """
+    n_params = len(config_list)
+    config = dict()
+
+    config['index'] = config_list[0]
+    config['scoring_function'] = config_list[1]
+
+    try:
+        config['B'] = config_list[2]
+    except IndexError:
+        config['B'] = 0.75
+
+    try:
+        config['K1'] = config_list[3]
+    except IndexError:
+        config['K1'] = 1.2
+
+    return config
+
+
+def run_config(dataset, config, verbose=True):
     """ Return a dictionary of all metrics
 
+    :param verbose:
     :param dataset: string
-    :param scoring_function: Whoosh scoring object
-    :return: dictionary
+    :return: Metrics object
     """
-    print(f"Index: {index_dir}")
-    print(f"Dataset: {dataset}")
-    print(f"Scoring function: {scoring_function.__class__.__name__}")
+    scoring_str = config['scoring_function']
+    index_type = config['index']
+
+    # index pathname
+    index_dir = INDEX_PATH + index_type
+
+    # selected scoring function
+    scoring_function = SCORINGS[scoring_str]
+
+    # scoring_function here is a Class name not an actual object
+    if scoring_str == 'bm25f':
+        B, K1 = config['B'], config['K1']
+        scoring_function = scoring_function(B, K1)
+        scoring_str = f"{scoring_str}({B},{K1})"
 
     # load selected dataset
     filtered_queries, queries_gt = load_dataset(dataset)
@@ -37,58 +79,35 @@ def run_config(index_dir, dataset, scoring_function):
     # results for both sets of queries
     results_ids = get_results_ids(ix, scoring_function, filtered_queries)
 
-    # compute metrics
-    MRR = mean_reciprocal_rank(results_ids, queries_gt)
+    index_type = index_dir.split('_')[-1]
 
-    # compute R-precision
-    rp = r_precision(results_ids, queries_gt)
-    rps = r_precision_stats(rp)
+    # save all performance metrics
+    metrics = Metrics(index_type, dataset, scoring_str)
+    metrics.compute_metrics(results_ids, queries_gt)
 
-    # Precision at k plot
-    rp_at_k = [r_precision_stats(r_precision(results_ids, queries_gt, k))['mean'] for k in K_VAL]
-    print(f"P@k {rp_at_k}")
+    if verbose:
+        print(f"Index: {index_dir}")
+        print(f"Dataset: {dataset}")
+        print(f"Scoring function: {scoring_function.__class__.__name__}")
+        metrics.print_metrics()
 
-    # Normalized Discounted Cumulative Gain at k plot
-    ndcg_at_k = [mean_ndcg(results_ids, queries_gt, k) for k in K_VAL]
-    print(f"NDCG@k {ndcg_at_k}")
-
-    print()
-    print(f"MRR: {MRR}\n")
-    print("[R-Precision]")
-    print(f"Mean: \t\t {rps['mean']}")
-    print(f"Min: \t\t {rps['min']}")
-    print(f"1st quartile:\t {rps['first_quartile']}")
-    print(f"Median: \t {rps['median']}")
-    print(f"3rd quartile:\t {rps['third_quartile']}")
-    print(f"Max:\t\t {rps['max']}")
-    print("\n" + "="*20 + "\n")
+    return metrics
 
 
 if __name__ == "__main__":
-    performance_stats = {}
+    metrics_list = list()
 
     # iterate over both datasets and all available configurations
     for dataset in DATASET:
         for item in CONFIG:
-            try:
-                index_dir, scoring, B, k1 = item
-            except ValueError:
-                index_dir, scoring = item
-
-            # index pathname
-            index_dir = INDEX_PATH + index_dir
-
-            # selected scoring function
-            scoring_function = SCORINGS[scoring]
-
-            # scoring_function here is a Class name not an actual object
-            if scoring == 'bm25f':
-                scoring_function = scoring_function(B, k1)
+            config = parse_config(item)
 
             # run a single configuration test
-            run_config(index_dir, dataset, scoring_function)
+            metrics = run_config(dataset, config)
+            metrics_list.append(metrics)
 
             # get dictionary and save it to file (maybe?)
 
-
     # make plots of NCDG@k and P@k
+    with open("metrics.pkl", "wb") as f:
+        pickle.dump(metrics_list, f)

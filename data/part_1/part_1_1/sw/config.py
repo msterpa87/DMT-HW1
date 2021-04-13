@@ -3,7 +3,7 @@ from whoosh import scoring
 from whoosh.analysis import *
 from utils import load_queries, load_ground_truth, queries_with_gt
 
-INDEX_PATH = "data/part_1/index_"
+INDEX_PATH = "./data/index_"
 
 # fill index with documents
 CRANFIELD_DIR = "../Cranfield_DATASET/DOCUMENTS/"
@@ -22,8 +22,6 @@ ANALYZERS = {'simple': SimpleAnalyzer(),
 SCORINGS = {'frequency': scoring.Frequency(),
             'tfidf': scoring.TF_IDF(),
             'bm25f': scoring.BM25F}
-
-K_VAL = [1, 3, 5, 10]
 
 
 def load_dataset(dataset):

@@ -5,6 +5,52 @@ import csv
 import numpy as np
 
 
+K_VAL = [1, 3, 5, 10]
+
+
+class Metrics(object):
+    def __init__(self, index_type, dataset, scoring_function):
+        self.scoring_function = scoring_function
+        self.dataset = dataset
+        self.index_type = index_type
+        self.MRR = None
+        self.rp = None
+        self.rps = None
+        self.rp_at_k = None
+        self.ndcg_at_k = None
+
+    def compute_metrics(self, results_ids, queries_gt):
+        # compute metrics
+        self.MRR = mean_reciprocal_rank(results_ids, queries_gt)
+
+        # compute R-precision
+        self.rp = r_precision(results_ids, queries_gt)
+        self.rps = r_precision_stats(self.rp)
+
+        # Precision at k plot
+        self.rp_at_k = [r_precision_stats(r_precision(results_ids, queries_gt, k))['mean'] for k in K_VAL]
+
+        # Normalized Discounted Cumulative Gain at k plot
+        self.ndcg_at_k = [mean_ndcg(results_ids, queries_gt, k) for k in K_VAL]
+
+    def print_metrics(self):
+        lines = [f"P@k {self.rp_at_k}",
+                 f"NDCG@k {self.ndcg_at_k}",
+                 f"MRR: {self.MRR}",
+                 "[R-Precision]",
+                 f"Mean: \t\t {self.rps['mean']}",
+                 f"Min: \t\t {self.rps['min']}",
+                 f"1st quartile:\t {self.rps['first_quartile']}",
+                 f"Median: \t {self.rps['median']}",
+                 f"3rd quartile:\t {self.rps['third_quartile']}",
+                 f"Max:\t\t {self.rps['max']}",
+                 "\n" + "="*20 + "\n"]
+        print("\n".join(lines))
+
+    def __str__(self):
+        return f"{self.index_type}-{self.scoring_function}"
+
+
 def load_queries(pathname):
     """ Returns the list of queries contained in the target pathname tsv file
 
