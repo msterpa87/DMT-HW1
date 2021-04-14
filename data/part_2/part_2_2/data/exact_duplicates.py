@@ -1,4 +1,6 @@
 import csv
+from collections import defaultdict
+from time import time
 
 TSV_FILENAME = "./title_shingles.tsv"
 
@@ -18,7 +20,7 @@ def load_shingles_id_from_tsv(filename):
         next(reader)
 
         for row in reader:
-            ids = list(map(int, row[1][1:-1].replace(',','').split()))
+            ids = list(map(int, row[1][1:-1].replace(',', '').split()))
             id_lists.append(ids)
 
     return id_lists
@@ -32,26 +34,22 @@ def count_duplicates(id_list):
     :return: int
         return the count of exact duplicates found
     """
-    hashes = sorted([hash(tuple(x)) for x in id_list])
+    shingles_dict = defaultdict(int)
 
-    duplicates = 0
-    count = 1
-    val = hashes[0]
+    for s in id_list:
+        # cast to tuple to compute hash
+        t = tuple(s)
+        # increase duplicates count for shingle
+        shingles_dict[hash(t)] += 1
 
-    for i in range(1, len(hashes)):
-        if hashes[i] != val:
-            # compute duplicates of previous streak
-            duplicates += int(count * (count - 1) / 2)
-            val = hashes[i]
-            count = 1
-        else:
-            count += 1
-
-    return duplicates
+    return sum(list(map(lambda n: int(n*(n-1)/2), shingles_dict.values())))
 
 
 if __name__ == "__main__":
+    tic = time()
     shingles_ids_list = load_shingles_id_from_tsv(TSV_FILENAME)
     n_duplicates = count_duplicates(shingles_ids_list)
 
-    print(f"Found {n_duplicates} duplicates")
+    elapsed = (time() - tic)
+
+    print(f"Found {n_duplicates} duplicates in {elapsed:.2f} seconds")
