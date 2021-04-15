@@ -51,7 +51,8 @@ def parse_config(config_list):
 def run_config(dataset, config, verbose=True):
     """ Return a dictionary of all metrics
 
-    :param verbose:
+    :param config: dictionary
+    :param verbose: bool
     :param dataset: string
     :return: Metrics object
     """
@@ -79,6 +80,7 @@ def run_config(dataset, config, verbose=True):
     # results for both sets of queries
     results_ids = get_results_ids(ix, scoring_function, filtered_queries)
 
+    # string name of the preprocessing used
     index_type = index_dir.split('_')[-1]
 
     # save all performance metrics

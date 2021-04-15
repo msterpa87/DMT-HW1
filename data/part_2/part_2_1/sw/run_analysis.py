@@ -1,9 +1,10 @@
 from utils import *
 
-TSV_FILENAME = ["data/BRUTE_FORCE_lyrics.tsv", "data/PRED_lyrics.tsv"]
 
 if __name__ == "__main__":
-    gt_path, pred_path = TSV_FILENAME
+    args = analysis_config()
+    print(args)
+    gt_path, pred_path = args.ground_truth, args.pred
 
     # load near duplicates from tsv
     gt = load_near_duplicates_tsv(gt_path)
@@ -12,6 +13,7 @@ if __name__ == "__main__":
     # performance analysis
     prob, false_pos, false_neg = near_duplicates_stats(gt, pred)
 
-    print(f"Detection probability: {prob}")
+    print(f"Found {len(pred)} near duplicates")
+    print(f"Detection probability: {prob:.3f}")
     print(f"False positives: {false_pos}")
     print(f"False negatives: {false_neg}")

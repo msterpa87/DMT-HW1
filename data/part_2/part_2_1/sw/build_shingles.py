@@ -1,12 +1,14 @@
 from utils import *
-
+from time import time
 
 if __name__ == "__main__":
     # read parameters from command line
     args = build_shingles_config()
 
+    tic = time()
+
     print(f"Reading shingles from {args.input}")
-    songs_list = shingles_from_tsv(field=args.field)
+    songs_list = shingles_from_tsv(field="lyrics")
 
     print(f"Creating shingle id dictionary for {len(songs_list)} shingles")
     shingles_ids = shingles_id_from_list(songs_list)
@@ -31,3 +33,6 @@ if __name__ == "__main__":
             # save to file non-empty lists
             if len(id_list) > 0:
                 writer.writerow([f"id_{song_id}", id_list])
+
+    elapsed = time() - tic
+    print(f"Finished in {elapsed:0.2f} seconds")

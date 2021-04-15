@@ -25,8 +25,8 @@ if __name__ == "__main__":
     MRR = mean_reciprocal_rank(results_ids, queries_gt)
 
     # compute R-precision
-    rp = r_precision(results_ids, queries_gt)
-    rps = r_precision_stats(rp)
+    rp = precision_at_k(results_ids, queries_gt)
+    rps = compute_stats(rp)
 
     print()
     print(f"MRR: {MRR}\n")
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     print(f"Max:\t\t {rps['max']}")
 
     # Precision at k plot
-    rp_at_k = [r_precision_stats(r_precision(results_ids, queries_gt, k))['mean'] for k in K_VAL]
+    rp_at_k = [compute_stats(precision_at_k(results_ids, queries_gt, k))['mean'] for k in K_VAL]
     print(f"P@k {rp_at_k}")
 
     # Normalized Discounted Cumulative Gain at k plot

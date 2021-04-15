@@ -24,11 +24,11 @@ class Metrics(object):
         self.MRR = mean_reciprocal_rank(results_ids, queries_gt)
 
         # compute R-precision
-        self.rp = r_precision(results_ids, queries_gt)
-        self.rps = r_precision_stats(self.rp)
+        self.rp = recall_at_k(results_ids, queries_gt)
+        self.rps = compute_stats(self.rp)
 
         # Precision at k plot
-        self.rp_at_k = [r_precision_stats(r_precision(results_ids, queries_gt, k))['mean'] for k in K_VAL]
+        self.rp_at_k = [compute_stats(precision_at_k(results_ids, queries_gt, k))['mean'] for k in K_VAL]
 
         # Normalized Discounted Cumulative Gain at k plot
         self.ndcg_at_k = [mean_ndcg(results_ids, queries_gt, k) for k in K_VAL]
@@ -150,7 +150,37 @@ def get_results_ids(ix, scoring_function, queries):
     return results_ids
 
 
-def r_precision(results_ids, results_gt, k=None):
+def recall_at_k(results_ids, results_gt, k=None):
+    """ Returns the dictionary of R-precision for each query
+
+    :param results_ids: dictionary {query_id: [list of ids]}
+    :param results_gt: dictionary {query_id: [list of ids]}
+    :param k: int
+        if None is equivalent to computing the R-Precision by considering
+        all relevant documents returned
+    :return: dictionary {query_id: r-precision}
+    """
+    recall_dict = dict()
+
+    for query_id, docs_id in results_ids.items():
+        # current ground truth
+        gt = results_gt[query_id]
+
+        if k is None:
+            k = len(docs_id)
+
+        # handle case of number of gt ids < k
+        k = min(k, len(gt))
+
+        # compute recall
+        relevant_returned = len(list(set(gt).intersection(set(docs_id[:k]))))
+        total_relevant = len(gt)
+        recall_dict[query_id] = relevant_returned / total_relevant
+
+    return recall_dict
+
+
+def precision_at_k(results_ids, results_gt, k=None):
     """ Returns the dictionary of R-precision for each query
 
     :param results_ids: dictionary {query_id: [list of ids]}
@@ -172,12 +202,12 @@ def r_precision(results_ids, results_gt, k=None):
         ids = ids[:k]
 
         r = len(list(set(gt).intersection(set(ids))))
-        rp[i] = r / size
+        rp[i] = r / k
 
     return rp
 
 
-def r_precision_stats(rp):
+def compute_stats(rp):
     """ Return a dictionary of stats on R-Precision
 
     :param rp: dictionary {query_id: float}
@@ -212,7 +242,7 @@ def mean_reciprocal_rank(results_ids, results_gt):
     return cumulative_rank / q_size
 
 
-def ndcg(results_ids, results_gt, k=None):
+def normalized_dcg(results_ids, results_gt, k=None):
     """ Return the discounted cumulative gain
 
     :param results_ids: list of ints
@@ -245,5 +275,5 @@ def mean_ndcg(results_ids, results_gt, k):
     :param k:
     :return:
     """
-    totals = [ndcg(results_ids[i], results_gt[i], k) for i in results_ids.keys()]
+    totals = [normalized_dcg(results_ids[i], results_gt[i], k) for i in results_ids.keys()]
     return sum(totals) / len(totals)
