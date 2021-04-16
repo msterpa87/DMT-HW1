@@ -1,9 +1,13 @@
 from whoosh.qparser import *
 from collections import defaultdict
 from contextlib import suppress
-import csv
+import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import csv
 
+sns.set_theme()
 
 K_VAL = [1, 3, 5, 10]
 
@@ -277,3 +281,35 @@ def mean_ndcg(results_ids, results_gt, k):
     """
     totals = [normalized_dcg(results_ids[i], results_gt[i], k) for i in results_ids.keys()]
     return sum(totals) / len(totals)
+
+
+def dataframe_from_metrics(metrics_list):
+    """
+
+    :param metrics_list:
+    :return:
+    """
+    top5_metrics = metrics_list[:5]
+    k_vals = [1, 3, 5, 10]
+
+    metrics_str = []
+    precisions = []
+    ncdg = []
+
+    for m in top5_metrics:
+        metrics_str += [str(m)] * 4
+        precisions += m.rp_at_k
+        ncdg += m.ndcg_at_k
+
+    df = pd.DataFrame.from_dict({'k': k_vals * 5,
+                                 'metric': metrics_str,
+                                 'precision': precisions,
+                                 'ncdg': ncdg})
+
+    return df
+
+
+def plot_df(df, ax, ylab, legend_title="Preprocess-scoring"):
+    plt.figure(figsize=(10, 8))
+    scatter = sns.scatterplot(data=df, ax=ax, x="k", y=ylab, hue="metric", alpha=0.5, s=150)
+    scatter.legend(title=legend_title)

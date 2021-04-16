@@ -3,7 +3,7 @@ import math
 
 
 ################################################
-num_hash_functions = 10
+num_hash_functions = 300
 upper_bound_on_number_of_distinct_elements  = 10000000
 #upper_bound_on_number_of_distinct_elements =   138492
 #upper_bound_on_number_of_distinct_elements =  3746518

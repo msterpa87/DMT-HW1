@@ -9,5 +9,7 @@ java -Xmx1G tools.NearDuplicatesDetector lsh_plus_min_hashing 0.95 5 10 hash_fun
 PERFORMANCE ANALYSIS FOR LYRICS
 
 
-BRUTE FORCE DETECTION TO PRODUCE GROUND TRUTH FOR LYRICS
-java -Xmx1G tools.NearDuplicatesDetector lsh_plus_min_hashing 0.95 5 10 hash_functions/300.tsv shingles.tsv PRED_near_duplicates.tsv
+BRUTE FORCE DETECTION TO PRODUCE GROUND TRUTH FOR TITLE
+java tools.NearDuplicatesDetector brute_force 1 ./data/title_shingles.tsv ./sw/BRUTE_FORCE_title.tsv
+
+java -Xmx1G tools.NearDuplicatesDetector lsh_plus_min_hashing 1 15 20 hash_functions/300.tsv data/title_shingles.tsv data/PRED_title.tsv

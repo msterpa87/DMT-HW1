@@ -2,8 +2,14 @@ from config import *
 from utils import *
 from whoosh import index
 import matplotlib.pyplot as plt
-import pickle
-import os
+LARGE_SIZE = 20
+MEDIUM_SIZE = 15
+SMALL_SIZE = 12
+
+plt.rc('axes', labelsize=LARGE_SIZE)
+plt.rc('xtick', labelsize=MEDIUM_SIZE)
+plt.rc('ytick', labelsize=MEDIUM_SIZE)
+plt.rc('legend', fontsize=SMALL_SIZE)
 
 # Max 12 different configuartions of Analyzer and Scoring
 # Frequency must appear in at most 1 config
@@ -18,6 +24,7 @@ CONFIG = [['stemming', 'bm25f', 0.8, 1.9],
           ['stemming', 'bm25f'],
           ['stemming', 'bm25f', 0.5, 1.5],
           ['stemming', 'bm25f', 0.2, 1.9],
+          ['standard', 'bm25f']
           ]
 
 DATASET = ['cranfield', 'time']
@@ -97,7 +104,7 @@ def run_config(dataset, config, verbose=True):
 
 
 if __name__ == "__main__":
-    metrics_list = list()
+    metrics_list = {'cranfield': [], 'time': []}
 
     # iterate over both datasets and all available configurations
     for dataset in DATASET:
@@ -106,10 +113,22 @@ if __name__ == "__main__":
 
             # run a single configuration test
             metrics = run_config(dataset, config)
-            metrics_list.append(metrics)
+            metrics_list[dataset].append(metrics)
 
-            # get dictionary and save it to file (maybe?)
+    # take top5 configurations according to MRR
+    top5_cranfield = sorted(metrics_list['cranfield'], key=lambda x: x.MRR, reverse=True)[:5]
+    top5_time = sorted(metrics_list['time'], key=lambda x: x.MRR, reverse=True)[:5]
 
     # make plots of NCDG@k and P@k
-    with open("metrics.pkl", "wb") as f:
-        pickle.dump(metrics_list, f)
+    datasets_df = list(map(dataframe_from_metrics, [top5_cranfield, top5_time]))
+    stats = ["precision", "ncdg"]
+
+    print("Saving plots...")
+    for stat in stats:
+        fig, axes = plt.subplots(1, 2, figsize=(15, 5))
+
+        for i, dataset in enumerate(DATASET):
+            plot_df(datasets_df[i], ax=axes[i], ylab=stat)
+            axes[i].set_title(f"{stat}@k for {dataset} dataset", fontsize=MEDIUM_SIZE)
+
+        fig.savefig(f"{stat}@k.png")

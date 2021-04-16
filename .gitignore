@@ -4,7 +4,11 @@ __pycache__/
 *$py.class
 *idea/
 Scripts/
-data/
+*.tsv
+*.csv
+*.txt
+*.class
+*.ipynb
 
 # C extensions
 *.so
