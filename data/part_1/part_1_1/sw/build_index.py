@@ -7,36 +7,66 @@ from bs4 import BeautifulSoup
 
 
 def id_from_filename(pathname):
+    """
+
+    :param pathname:
+    :return:
+    """
     return re.search(r"([0-9]+)\.html", pathname).group(1)
 
 
 def pathnames_from_dir(directory):
+    """
+
+    :param directory:
+    :return:
+    """
     files = list(filter(lambda x: 'html' in x, os.listdir(directory)))
     return list(map(lambda x: directory + x, files))
 
 
-if __name__ == "__main__":
-    analyzer_str = selected_analyzer()
+def get_schema(dataset, analyzer):
+    """
 
-    index_dir = INDEX_PATH + analyzer_str
+    :param dataset:
+    :param analyzer:
+    :return:
+    """
+    if dataset == 'cranfield':
+        schema = Schema(id=ID(stored=True), title=TEXT(stored=False, analyzer=analyzer),
+                        content=TEXT(stored=False, analyzer=analyzer))
+    else:
+        schema = Schema(id=ID(stored=True),
+                        content=TEXT(stored=False, analyzer=analyzer))
+
+    return schema
+
+
+if __name__ == "__main__":
+    # inputs from command line
+    config = build_index_config()
+    analyzer_str = config['analyzer']
+    dataset_str = config['dataset']
+
+    # index target directory and analyzer
+    index_dir = f"{INDEX_PATH}_{dataset_str}_{analyzer_str}"
     analyzer = ANALYZERS[analyzer_str]
 
     # create index directory
     if not os.path.exists(index_dir):
         os.mkdir(index_dir)
+    print(f"Indexing documents to {index_dir}")
 
-    # define schema
-    schema = Schema(id=ID(stored=True),
-                    content=TEXT(stored=False, analyzer=analyzer))
+    # get schema based on selected dataset
+    schema = get_schema(dataset_str, analyzer)
 
     # create index
     create_in(index_dir, schema)
-
-    # open index
     ix = index.open_dir(index_dir)
     writer = ix.writer()
 
-    files = pathnames_from_dir(CRANFIELD_DIR) + pathnames_from_dir(TIME_DIR)
+    # list of documents to be indexed
+    files = pathnames_from_dir(DATASETS[dataset_str]['dir'])
 
     for pathname in files:
         # read html content
@@ -52,4 +82,4 @@ if __name__ == "__main__":
 
     writer.commit()
 
-    print(f"Added {len(files)} documents")
+    print(f"Indexed {len(files)} documents")

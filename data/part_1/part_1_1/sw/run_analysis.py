@@ -67,7 +67,7 @@ def run_config(dataset, config, verbose=True):
     index_type = config['index']
 
     # index pathname
-    index_dir = INDEX_PATH + index_type
+    index_dir = f"{INDEX_PATH}_{dataset}_{index_type}"
 
     # selected scoring function
     scoring_function = SCORINGS[scoring_str]

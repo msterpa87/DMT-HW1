@@ -29,7 +29,7 @@ if __name__ == "__main__":
     rps = compute_stats(rp)
 
     print()
-    print(f"MRR: {MRR}\n")
+    print(f"MRR: {MRR:.3f}\n")
     print("[R-Precision]")
     print(f"Mean: \t\t {rps['mean']}")
     print(f"Min: \t\t {rps['min']}")

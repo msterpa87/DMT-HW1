@@ -3,16 +3,15 @@ from whoosh import scoring
 from whoosh.analysis import *
 from utils import load_queries, load_ground_truth, queries_with_gt
 
-INDEX_PATH = "./data/index_"
+INDEX_PATH = "./data/index"
 
 # fill index with documents
-CRANFIELD_DIR = "../Cranfield_DATASET/DOCUMENTS/"
-TIME_DIR = "../Time_DATASET/DOCUMENTS/"
-
-CRANFIELD_QUERY = "../Cranfield_DATASET/cran_Queries.tsv"
-CRANFIELD_GT = "../Cranfield_DATASET/cran_Ground_Truth.tsv"
-TIME_QUERY = "../Time_DATASET/time_Queries.tsv"
-TIME_GT = "../Time_DATASET/time_Ground_Truth.tsv"
+DATASETS = {'cranfield': {'dir': "../Cranfield_DATASET/DOCUMENTS/",
+                          'query': "../Cranfield_DATASET/cran_Queries.tsv",
+                          'gt': "../Cranfield_DATASET/cran_Ground_Truth.tsv"},
+            'time': {'dir': "../Time_DATASET/DOCUMENTS/",
+                     'query': "../Time_DATASET/time_Queries.tsv",
+                     'gt': "../Time_DATASET/time_Ground_Truth.tsv"}}
 
 ANALYZERS = {'simple': SimpleAnalyzer(),
              'standard': StandardAnalyzer(),
@@ -31,13 +30,9 @@ def load_dataset(dataset):
     :param dataset: a string in ['cranfield', 'time']
     :return: a pair [filtered_queries, queries_gt]
     """
-    selection = {'cranfield': [CRANFIELD_QUERY, CRANFIELD_GT],
-                 'time': [TIME_QUERY, TIME_GT]}
-
     # loading queries
-    queries_path, gt_path = selection[dataset]
-    queries = load_queries(queries_path)
-    gt = load_ground_truth(gt_path)
+    queries = load_queries(DATASETS[dataset]['query'])
+    gt = load_ground_truth(DATASETS[dataset]['gt'])
 
     # keeping only queries with gt
     filtered_queries = queries_with_gt(queries, gt)
@@ -62,7 +57,7 @@ def query_config():
     parser.add_argument('-K1', type=float, default=1.2, help="See BM25F documentation")
     args = parser.parse_args()
 
-    config = {'path': INDEX_PATH + args.dir,
+    config = {'path': f"{INDEX_PATH}_{args.dataset}_{args.analyzer}",
               'scoring': SCORINGS[args.scoring],
               'dataset': args.dataset}
 
@@ -73,7 +68,7 @@ def query_config():
     return config
 
 
-def selected_analyzer():
+def build_index_config():
     """ Return the selected analyzer from command line
 
     :return: str
@@ -81,6 +76,8 @@ def selected_analyzer():
     parser = argparse.ArgumentParser(description="Build index")
     parser.add_argument('-a', '--analyzer', default='simple',
                         type=str, help=f"Choose among {list(ANALYZERS.keys())}")
+    parser.add_argument('-data', '--dataset', type=str, required=True,
+                        help=f"Choose among {list(DATASETS.keys())}")
     args = parser.parse_args()
 
-    return args.analyzer
+    return {'analyzer': args.analyzer, 'dataset': args.dataset}
