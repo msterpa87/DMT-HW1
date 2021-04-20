@@ -7,39 +7,40 @@ from bs4 import BeautifulSoup
 
 
 def id_from_filename(pathname):
-    """
+    """ Return the id in the filename of pathname
 
-    :param pathname:
-    :return:
+    :param pathname: string
+    :return: string
     """
     return re.search(r"([0-9]+)\.html", pathname).group(1)
 
 
 def pathnames_from_dir(directory):
-    """
+    """ Return the list of pathname of files contanied in directory
 
-    :param directory:
-    :return:
+    :param directory: string
+    :return: list of strings
     """
-    files = list(filter(lambda x: 'html' in x, os.listdir(directory)))
-    return list(map(lambda x: directory + x, files))
+    filenames = list(filter(lambda x: 'html' in x, os.listdir(directory)))
+    return list(map(lambda x: directory + x, filenames))
 
 
 def get_schema(dataset, analyzer):
-    """
+    """ Return an object Schema with the appropriate structure for the selected dataset
 
-    :param dataset:
-    :param analyzer:
-    :return:
+    :param dataset: string
+        must be one of ['cranfield', 'time']
+    :param analyzer: Whoos analyzer
+    :return: Schema object
     """
     if dataset == 'cranfield':
-        schema = Schema(id=ID(stored=True), title=TEXT(stored=False, analyzer=analyzer),
-                        content=TEXT(stored=False, analyzer=analyzer))
+        custom_schema = Schema(id=ID(stored=True), title=TEXT(stored=False, analyzer=analyzer),
+                               content=TEXT(stored=False, analyzer=analyzer))
     else:
-        schema = Schema(id=ID(stored=True),
-                        content=TEXT(stored=False, analyzer=analyzer))
+        custom_schema = Schema(id=ID(stored=True),
+                               content=TEXT(stored=False, analyzer=analyzer))
 
-    return schema
+    return custom_schema
 
 
 if __name__ == "__main__":

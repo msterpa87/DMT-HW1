@@ -3,9 +3,9 @@ from whoosh import scoring
 from whoosh.analysis import *
 from utils import load_queries, load_ground_truth, queries_with_gt
 
+
 INDEX_PATH = "./data/index"
 
-# fill index with documents
 DATASETS = {'cranfield': {'dir': "../Cranfield_DATASET/DOCUMENTS/",
                           'query': "../Cranfield_DATASET/cran_Queries.tsv",
                           'gt': "../Cranfield_DATASET/cran_Ground_Truth.tsv"},

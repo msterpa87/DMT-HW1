@@ -3,7 +3,6 @@ from utils import *
 
 if __name__ == "__main__":
     args = analysis_config()
-    print(args)
     gt_path, pred_path = args.ground_truth, args.pred
 
     # load near duplicates from tsv

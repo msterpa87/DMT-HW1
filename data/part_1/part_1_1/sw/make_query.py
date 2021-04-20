@@ -2,6 +2,7 @@ from whoosh import index
 from config import *
 from utils import *
 
+
 if __name__ == "__main__":
     config = query_config()
 

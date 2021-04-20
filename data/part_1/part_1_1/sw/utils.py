@@ -24,6 +24,14 @@ class Metrics(object):
         self.ndcg_at_k = None
 
     def compute_metrics(self, results_ids, queries_gt):
+        """ Given the query results and the ground truth computes
+            several metrics (MRR, Precision, etc.)
+
+        :param results_ids: dictionary
+            has the structure {query_id: list of doc_ids}
+        :param queries_gt: dictionary
+        :return:
+        """
         # compute metrics
         self.MRR = mean_reciprocal_rank(results_ids, queries_gt)
 
@@ -38,6 +46,8 @@ class Metrics(object):
         self.ndcg_at_k = [mean_ndcg(results_ids, queries_gt, k) for k in K_VAL]
 
     def print_metrics(self):
+        """ Print to console the metrics computed """
+
         lines = [f"P@k {self.rp_at_k}",
                  f"NDCG@k {self.ndcg_at_k}",
                  f"MRR: {self.MRR}",
@@ -135,7 +145,7 @@ def get_results_ids(ix, scoring_function, queries):
 
     :param ix: Whoosh index
     :param scoring_function: Whoosh scoring function
-    :param queries:
+    :param queries: list of strings
     :return:
     """
     results_ids = {}
@@ -155,7 +165,7 @@ def get_results_ids(ix, scoring_function, queries):
 
 
 def recall_at_k(results_ids, results_gt, k=None):
-    """ Returns the dictionary of R-precision for each query
+    """ Returns a dictionary representing the recall at k
 
     :param results_ids: dictionary {query_id: [list of ids]}
     :param results_gt: dictionary {query_id: [list of ids]}
@@ -171,10 +181,7 @@ def recall_at_k(results_ids, results_gt, k=None):
         gt = results_gt[query_id]
 
         if k is None:
-            k = len(docs_id)
-
-        # handle case of number of gt ids < k
-        k = min(k, len(gt))
+            k = len(gt)
 
         # compute recall
         relevant_returned = len(list(set(gt).intersection(set(docs_id[:k]))))
@@ -189,7 +196,7 @@ def precision_at_k(results_ids, results_gt, k=None):
 
     :param results_ids: dictionary {query_id: [list of ids]}
     :param results_gt: dictionary {query_id: [list of ids]}
-    :param k:
+    :param k: int
     :return: dictionary {query_id: r-precision}
     """
     rp = {}
@@ -272,22 +279,22 @@ def normalized_dcg(results_ids, results_gt, k=None):
 
 
 def mean_ndcg(results_ids, results_gt, k):
-    """
+    """ Returns the average normalized DCG
 
-    :param results_ids:
-    :param results_gt:
-    :param k:
-    :return:
+    :param results_ids: list of list of ints
+    :param results_gt: list of list of ints
+    :param k: int
+    :return: float
     """
     totals = [normalized_dcg(results_ids[i], results_gt[i], k) for i in results_ids.keys()]
     return sum(totals) / len(totals)
 
 
 def dataframe_from_metrics(metrics_list):
-    """
+    """ Returns a dataframe of metrics, used for plotting
 
-    :param metrics_list:
-    :return:
+    :param metrics_list: list of Metrics objects
+    :return: pandas.DataFrame
     """
     top5_metrics = metrics_list[:5]
     k_vals = [1, 3, 5, 10]
@@ -309,7 +316,17 @@ def dataframe_from_metrics(metrics_list):
     return df
 
 
-def plot_df(df, ax, ylab, legend_title="Preprocess-scoring"):
+def plot_df(df, ax, ylab, ylim, legend_title="Preprocess-scoring"):
+    """ Create a barplot from the metrics contained in the input DataFrame
+
+    :param df: pandas.DataFrame
+    :param ax: matplotlib.Axes
+    :param ylab: string
+    :param ylim: int
+    :param legend_title: string
+    :return:
+    """
     plt.figure(figsize=(10, 8))
-    scatter = sns.scatterplot(data=df, ax=ax, x="k", y=ylab, hue="metric", alpha=0.5, s=150)
+    scatter = sns.barplot(data=df, ax=ax, x="k", y=ylab, hue="metric")
     scatter.legend(title=legend_title)
+    scatter.set(ylim=(0, ylim))
