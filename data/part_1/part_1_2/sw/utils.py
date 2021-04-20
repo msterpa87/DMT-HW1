@@ -161,11 +161,11 @@ def print_stats(stats_list, title):
 
 
 def fscore_from_pr(precision, recall):
-    """
+    """ Computes the F1-score
 
-    :param precision:
-    :param recall:
-    :return:
+    :param precision: list of floats
+    :param recall: list of floats
+    :return: float
     """
     precision = np.array(list(precision.values()))
     recall = np.array(list(recall.values()))
@@ -175,11 +175,10 @@ def fscore_from_pr(precision, recall):
     return fscore[~np.isnan(fscore)].mean()
 
 
-def print_fscore(fscore):
-    """
+def print_fscores(fscore):
+    """ Prints to console the fscore value
 
-    :param fscore:
-    :return:
+    :param fscore: list of floats
     """
     print("F-score:")
     print("\t".join(map(str, range(1, len(fscore)+1))))

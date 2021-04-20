@@ -6,9 +6,9 @@ SONGS_PATH = "../../dataset/250K_lyrics_from_MetroLyrics.csv"
 
 
 def analysis_config():
-    """
+    """ Read parameters from command line
 
-    :return:
+    :return: argparse.Parser object
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("-g", "--ground-truth", type=str, default="./BRUTE_FORCE_near_duplicates.tsv")
@@ -18,9 +18,9 @@ def analysis_config():
 
 
 def build_shingles_config():
-    """
+    """ Read parameters from command line
 
-    :return:
+    :return: argparse.Parser object
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", type=str, default=SONGS_PATH,

@@ -18,5 +18,5 @@ if __name__ == "__main__":
     print_stats(recall_stats, title="Recall at 4")
 
     # Average F-score
-    fscore = [fscore_from_pr(p, r) for p,r in zip(precision_at_4, recall_at_4)]
-    print_fscore(fscore)
+    fscore = [fscore_from_pr(p, r) for p, r in zip(precision_at_4, recall_at_4)]
+    print_fscores(fscore)

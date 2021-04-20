@@ -7,7 +7,7 @@ TSV_FILENAME = "./title_shingles.tsv"
 
 
 def load_shingles_id_from_tsv(filename):
-    """
+    """ Returns a list of identifier associated to the shingles from filename
 
     :param filename: string
         filename containing the shingles generated from build_shingles.py
@@ -26,24 +26,6 @@ def load_shingles_id_from_tsv(filename):
 
     return id_lists
 
-
-# def count_duplicates(id_list):
-#     """ Return the number of exact duplicates song based on their shingles
-#
-#     :param id_list: list of list of ints
-#         each element of the list represents the list of shingles ids of a song
-#     :return: int
-#         return the count of exact duplicates found
-#     """
-#     shingles_dict = defaultdict(int)
-#
-#     for s in id_list:
-#         # cast to tuple to compute hash
-#         t = tuple(s)
-#         # increase duplicates count for shingle
-#         shingles_dict[hash(t)] += 1
-#
-#     return sum(list(map(lambda n: int(n*(n-1)/2), shingles_dict.values())))
 
 def count_duplicates(duplicates_list):
     """ Return the number of exact duplicates song based on their shingles
@@ -76,10 +58,10 @@ def find_duplicates(id_list):
 
 
 def duplicates_to_tsv(duplicates):
-    """
+    """ Saves duplicates to tsv file
 
-    :param duplicates:
-    :return:
+    :param duplicates: dict {id: list of ints}
+        a dictionary with hash as key and list of doc_ids as values
     """
     with open("exact_duplicates.tsv", "w", newline='') as f:
         writer = csv.writer(f, delimiter='\t')
